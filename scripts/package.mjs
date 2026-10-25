@@ -8,7 +8,7 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 
 const manifest = JSON.parse(readFileSync('manifest.json', 'utf8'));
-const FILES = ['manifest.json', 'src', 'LICENSE', 'README.md'];
+const FILES = ['manifest.json', 'src', 'icons', 'LICENSE', 'README.md'];
 const EPOCH = new Date('2026-01-01T00:00:00Z');
 
 function walk(dir) {

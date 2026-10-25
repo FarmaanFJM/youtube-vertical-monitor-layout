@@ -16,6 +16,19 @@ if (manifest.version !== pkg.version) fail(`manifest version ${manifest.version}
 if ((manifest.permissions || []).length) fail(`unexpected permissions: ${manifest.permissions}`);
 if (manifest.host_permissions?.length) fail('host_permissions must be empty (content scripts only)');
 if (manifest.background || manifest.web_accessible_resources) fail('no background page or web-accessible resources expected');
+// Branding: icons must be declared, exist, be real PNGs of the declared size, and no popup may be added.
+if (manifest.action?.default_popup || manifest.options_page || manifest.options_ui) fail('no popup or options page expected');
+const iconSets = { icons: manifest.icons, 'action.default_icon': manifest.action?.default_icon };
+for (const [where, set] of Object.entries(iconSets)) {
+  for (const size of ['16', '32', '48', '128']) {
+    const f = set?.[size];
+    if (!f) { fail(`${where}[${size}] missing`); continue; }
+    if (!existsSync(f)) { fail(`${where}[${size}] references missing file ${f}`); continue; }
+    const b = readFileSync(f);
+    if (b.subarray(1, 4).toString() !== 'PNG') { fail(`${f} is not a PNG`); continue; }
+    if (b.readUInt32BE(16) !== +size || b.readUInt32BE(20) !== +size) fail(`${f} is ${b.readUInt32BE(16)}x${b.readUInt32BE(20)}, expected ${size}x${size}`);
+  }
+}
 const scripts = manifest.content_scripts || [];
 if (scripts.length !== 1) fail('expected exactly one content_scripts entry');
 for (const cs of scripts) {
