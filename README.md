@@ -1,157 +1,184 @@
 # YouTube Vertical Monitor Layout
 
-A small Manifest V3 browser extension that makes **YouTube comfortable on a portrait (vertical) monitor**. It does not recreate YouTube — it *reorganizes* the real YouTube page with CSS so the video can use the full width of your window, and everything else is arranged underneath it.
+**Make YouTube comfortable on a portrait monitor: full-width video, with everything else rearranged underneath it.**
 
-| Regular video | Livestream |
-|---|---|
-| native header | native header |
-| **video, edge to edge** | **video, edge to edge** |
-| title, channel, like/share/save, description | **native live chat** (fills the remaining height) |
-| comments (left half) \| recommendations (right half) | title, channel, viewer count, description |
-| | comments \| recommendations |
+[![CI](https://github.com/FarmaanFJM/youtube-vertical-monitor-layout/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/FarmaanFJM/youtube-vertical-monitor-layout/actions/workflows/ci.yml)
 
-No custom buttons, search boxes, chat inputs, players, panels or settings are added. There is no toggle: the layout switches on by itself when the browser viewport is taller than it is wide and switches off again when it is not.
+YouTube's desktop layout is designed for wide screens: a video capped to a centered column next to a 400px sidebar. Turn your monitor on its side and the player shrinks to a narrow strip while most of the screen's width goes to margins and a recommendations column.
 
-## Why portrait monitors need this
+This browser extension **reorganizes YouTube's own interface instead of replacing it**. The real player, header, search, comments, recommendations and live chat stay exactly as YouTube builds them; the extension only moves and resizes them with CSS so that the video spans the full browser width and the tall screen is used for the content below it. When the window is not portrait-shaped, it steps aside and YouTube looks exactly as it normally does.
 
-YouTube's desktop layout assumes a wide screen: a player capped to a centered column next to a 400px sidebar. Rotate the monitor and the player shrinks to a narrow strip, with large unused margins, a chat panel squeezed beside or below it, and recommendations that cannot fit. On a 1080 × 1920 viewport this extension gives a 16:9 video the full 1080px width (1080 × 607.5), and uses the remaining ~1300px of height for chat, comments and recommendations.
+## Before and after
 
-## Supported browsers
+The same YouTube video, the same 1080 × 1920 viewport, the same Chromium browser, with the extension **off** and **on**. These are real captures of youtube.com, not mock-ups. Click an image for the full-resolution screenshot.
 
-| Browser | Status |
-|---|---|
-| Google Chrome, Microsoft Edge, Brave, other Chromium (MV3) | Primary target. Automated tests run in Chromium. |
-| Firefox 121+ | Packaged (`-firefox.zip` adds `browser_specific_settings`). The code uses only standard DOM/CSS APIs, but **it has not been tested in Firefox**. `:has()` (used to find the comments column) needs Firefox 121+. |
-| Safari | Not supported / not tested. |
+| Before: YouTube's standard layout | After: with the extension |
+|:---:|:---:|
+| [<img src="docs/screenshots/watch-before.jpg" width="380" alt="YouTube watch page at 1080 by 1920 without the extension: the video occupies a narrow column on the left and recommendations take a sidebar on the right">](docs/screenshots/watch-before.jpg) | [<img src="docs/screenshots/watch-after.jpg" width="380" alt="The same page with the extension: the video spans the full 1080 pixel width, with video details below and comments on the left and recommendations on the right">](docs/screenshots/watch-after.jpg) |
+| Video is 712 px wide (66% of the window), with side margins | Video is 1080 px wide (100%), 16:9, starting at the left edge |
+| Recommendations sit in a sidebar | Video info below, then **comments left, recommendations right** |
 
-## What is supported
+> **About the dark player area.** These captures come from a logged-out automated browser, and YouTube replaces playback with its *"Sign in to confirm you're not a bot"* check. That wall was left alone — nothing was bypassed — so the player shows it instead of a video frame. The layout is real; the video frame is just not playing. Recommendations and comments are live content, so they differ slightly between the two captures.
 
-| Page | Behavior |
-|---|---|
-| **Watch (regular video)** | Header on top, player edge to edge, video info, then comments (left) and recommendations (right), each ~50% of the width. |
-| **Watch (livestream / premiere / chat replay)** | Player edge to edge, native chat directly under it taking the remaining viewport height (minimum 480px, scrolls on its own), then info and the rest. |
-| **Playlist playback** | The native playlist panel sits under the player at full width; the player stays full width. |
-| **Home, Subscriptions, channel pages** | YouTube's own grid at 2 columns (1 column below 600px). Mini-guide column removed; guide opens as an overlay. |
-| **Search results** | 2 columns of cards, thumbnail above text (1 column below 600px); shelves, channels and playlists span the row. |
-| **Playlist pages, History** | Info sidebar stacks above the video list; no reserved side column. |
-| **Shorts** | Left native. Shorts are already vertical; the extension only removes the reserved guide width and never forces a 16:9 box. |
-| Other pages (settings, premium, …) | Only the guide-overlay rule applies. |
+## Key features
 
-## Normal browsing vs. browser fullscreen vs. YouTube fullscreen
+- **Edge-to-edge video.** In a portrait window a 16:9 video fills 100% of the browser width: no side margins, no reserved sidebar, no letterboxing added by the extension. At 1080 px wide the player is 1080 × 607.5 and starts at x = 0.
+- **Native aspect ratio.** The player's height still comes from YouTube's own aspect-ratio rule, so nothing is cropped or stretched. Videos with black bars baked in keep them.
+- **Native header and navigation.** YouTube's hamburger, logo, search, notifications and account menu stay at the top. The hamburger opens YouTube's own overlay and never narrows the video.
+- **Comments and recommendations in two columns** beneath regular videos, about half the window each.
+- **Native live chat beneath livestreams**, directly under the player, taking the remaining screen height and scrolling on its own. *(Verified on a test page only — see [Limitations](#limitations).)*
+- **Portrait-friendly browsing pages:** home, subscriptions and channel grids, search results, playlists and history.
+- **Automatic.** The layout turns on when the browser viewport is taller than it is wide, and off again when it is not. There is nothing to click.
+- **Native fullscreen untouched.** YouTube's own fullscreen button works exactly as before; the portrait layout is switched off while it is active.
+- **No replacement controls.** The extension adds no player, search box, chat input, buttons or panels — and no popup.
+- **Minimal permissions, no data collection.** It requests no extension permissions, makes no network requests and reads no page content. See [Privacy](#privacy).
 
-* **Normal browsing** — YouTube's header stays at the top (hamburger, logo, search, create, notifications, avatar), the player sits directly under it at the full viewport width, and everything else is below.
-* **Browser fullscreen (F11)** — the extension looks only at the viewport size, so F11 on a vertical monitor keeps the same layout with more room. The native header is unchanged; there is no custom "hide header" control.
-* **YouTube's native fullscreen button** — every watch-page rule is disabled while `ytd-watch-flexy` has YouTube's own `fullscreen` attribute, so the video fullscreens exactly as it does without the extension, uncropped and at its own aspect ratio. The portrait page is never turned into an enlarged fullscreen layout.
+## Gallery
 
-## Automatic portrait activation
+### Regular video and search results (real youtube.com)
 
-A tiny content script sets `ytvm-portrait` on `<html>` when `viewport height > viewport width` (the real browser viewport, not the monitor's orientation — a portrait-shaped window on a landscape monitor qualifies; a landscape window on a portrait monitor does not). **Every** CSS rule in the extension starts with `html.ytvm-portrait`, so when the window returns to landscape the class is removed and YouTube's own desktop layout comes back with nothing left over. The video is not reloaded, seeked or paused, and the chat iframe keeps its session. Browser zoom works the same way: zooming changes the viewport in CSS pixels, which is what the check uses.
+| Search results, portrait | Landscape window: YouTube's layout restored |
+|:---:|:---:|
+| [<img src="docs/screenshots/search-after.jpg" width="380" alt="YouTube search results at 1080 by 1920 with the extension: results shown as a two-column grid of cards with full-width thumbnails">](docs/screenshots/search-after.jpg) | [<img src="docs/screenshots/landscape-restored.jpg" width="380" alt="The same extension installed, in a 1920 by 1080 landscape window: YouTube's normal desktop layout with the video beside a recommendations sidebar">](docs/screenshots/landscape-restored.jpg) |
+| Results become a two-column card grid and the narrow guide column is removed. [Search before](docs/screenshots/search-before.jpg) shows the standard single-column list. | Same extension, 1920 × 1080: the portrait layout is off and YouTube looks as it normally does. |
 
-## Install (unpacked)
+### Livestream and home page (simulated YouTube page fixtures)
 
-### Chrome / Edge / Brave
+YouTube would not serve a livestream page or a home feed to the automated, logged-out browser used for testing, and it was not worked around. These three screenshots therefore come from [`tests/fixtures/youtube.html`](tests/fixtures/youtube.html), a **simulated YouTube page** that reproduces the parts of YouTube's DOM and native CSS the extension depends on. **They are not screenshots of youtube.com**, and the fixture looks deliberately plain. They show what the CSS does to that structure.
 
-1. Clone or download this repository: `git clone https://github.com/FarmaanFJM/youtube-vertical-monitor-layout`
-2. Open `chrome://extensions` (Edge: `edge://extensions`) and turn on **Developer mode**.
-3. Click **Load unpacked** and select the repository folder (the one containing `manifest.json`).
-4. Open YouTube in a portrait-shaped window (or rotate the monitor).
+| Livestream before (fixture) | Livestream after (fixture) | Home after (fixture) |
+|:---:|:---:|:---:|
+| [<img src="docs/screenshots/livestream-before-fixture.jpg" width="250" alt="Simulated livestream page without the extension: small player with the chat in a sidebar column">](docs/screenshots/livestream-before-fixture.jpg) | [<img src="docs/screenshots/livestream-after-fixture.jpg" width="250" alt="Simulated livestream page with the extension: full-width player with the chat filling the screen directly below it">](docs/screenshots/livestream-after-fixture.jpg) | [<img src="docs/screenshots/home-after-fixture.jpg" width="250" alt="Simulated home page with the extension: video cards in two columns across the full width">](docs/screenshots/home-after-fixture.jpg) |
+| Simulated page | Chat directly under the full-width player | Two-column grid |
 
-### Firefox (temporary add-on)
+### Installed in Chrome
 
-1. Run `npm install && npm run package`.
-2. Open `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on…** and pick `dist/…-firefox.zip` (or the `manifest.json` of an unzipped copy). Temporary add-ons are removed when Firefox restarts; permanent installation requires signing through AMO.
+[<img src="docs/screenshots/extension-installation.jpg" width="620" alt="Chrome's extensions page with Developer mode on, showing YouTube Vertical Monitor Layout 0.1.0 loaded and enabled">](docs/screenshots/extension-installation.jpg)
 
-### From a release
+The extension loaded as an unpacked extension on `chrome://extensions` (captured in a Chromium test build, loaded with the same flag-based mechanism Playwright uses rather than by clicking *Load unpacked*).
 
-Tagged releases (`v*`) publish `…-chromium.zip` and `…-firefox.zip` built by CI. Unzip the Chromium archive and use **Load unpacked** on the folder.
+## Installation
 
-## Develop and test
+### Chrome and Microsoft Edge (and other Chromium browsers)
+
+1. Clone or download this repository:
+   ```bash
+   git clone https://github.com/FarmaanFJM/youtube-vertical-monitor-layout.git
+   ```
+2. Open `chrome://extensions` (Edge: `edge://extensions`).
+3. Turn on **Developer mode** (top right in Chrome, left sidebar in Edge).
+4. Click **Load unpacked**.
+5. Select the folder that contains `manifest.json`.
+6. Open YouTube in a portrait-shaped browser window — either rotate your monitor or make the window taller than it is wide.
+
+The extension decides by the **browser viewport's** shape, not the monitor's orientation: a tall, narrow window on a landscape monitor gets the portrait layout, and a wide window on a rotated monitor does not. Resizing switches layouts live, with no reload and without interrupting playback.
+
+Tested in Chromium. Edge uses the same engine and the same steps but has not been tested directly.
+
+### Firefox
+
+Firefox is **not supported yet**. `npm run package` builds a Firefox-flavoured archive, and the code uses only standard DOM and CSS features, but it has never been loaded in Firefox, so no instructions are offered until it has been tested.
+
+## How it works
+
+The extension is a single content script (plain JavaScript, no build step, no framework) plus four stylesheets, running on `https://www.youtube.com/*`.
+
+- **CSS does the layout.** On a watch page, YouTube's wrapper elements (`#primary`, `#below`, `#secondary`, …) are set to `display: contents`, which makes the *already-mounted* player, video info, chat, comments and recommendations direct children of one CSS grid. They are then placed with `grid-column` and `order`. Nothing is cloned, re-parented or recreated, so the `<video>`, the chat iframe and their state keep running through layout changes.
+- **JavaScript only sets two classes on `<html>`:** `ytvm-portrait` (the viewport is taller than wide) and `ytvm-page-<kind>` (derived from the URL path). It listens to `resize` (coalesced to one check per frame) and YouTube's own `yt-navigate-*` events; there is no `MutationObserver` and no polling.
+- **Every CSS rule starts with `html.ytvm-portrait`.** Removing the class gives you stock YouTube back with nothing left over.
+- **Nothing replaces YouTube's UI.** There is no custom player, live chat, search box or navigation. The extension has no popup, options page or injected elements; `npm run validate` fails the build if the scripts ever call `createElement`, `innerHTML`, `fetch` or similar.
+
+## Supported pages
+
+"Implemented" means the layout rules exist and are covered by fixture tests. "Live-verified" means they were also checked on the real youtube.com, logged out.
+
+| Page | What changes | Implemented | Live-verified |
+|---|---|:---:|:---:|
+| Regular video | Full-width player; info; comments left, recommendations right | ✅ | ✅ |
+| Livestream / premiere / chat replay | Full-width player; native chat directly below; info after | ✅ | ❌ page not served to the test browser |
+| Homepage | Two-column grid (one column under 600 px) | ✅ | ❌ no feed items rendered |
+| Search results | Two-column cards; thumbnails above text | ✅ | ◐ no horizontal overflow only; layout seen in the screenshot above |
+| Subscriptions | Two-column grid | ✅ | ❌ |
+| Channels | Two-column grid on the Videos tab | ✅ | ❌ |
+| Playlists (page and playback) | Info stacks above the list; playback panel under the player | ✅ | ❌ |
+| History | Single stacked column, no reserved side column | ✅ | ❌ |
+| Shorts | Left native (already vertical); only the reserved guide width is removed | ✅ | ❌ |
+
+## Development and testing
 
 ```bash
+git clone https://github.com/FarmaanFJM/youtube-vertical-monitor-layout.git
+cd youtube-vertical-monitor-layout
 npm install
-npx playwright install chromium   # once; not needed if Playwright's Chromium is already present
+npx playwright install chromium      # once
 
-npm run lint        # ESLint
-npm run validate    # manifest + invariants (see below)
-npm run test:unit   # node:test, pure logic + content-script wiring (no browser)
-npm run test:e2e    # Playwright: real Chromium + the real unpacked extension vs. a fixture page
-npm run test:live   # smoke tests against real youtube.com (not run in CI)
-npm test            # lint + validate + unit + e2e
-npm run package     # dist/*.zip, byte-reproducible
+npm run lint          # ESLint
+npm run validate      # manifest and design-rule checks
+npm run test:unit     # unit tests (no browser)
+npm run test:e2e      # Chromium fixture tests
+npm run test:live     # smoke tests against real youtube.com (not run in CI)
+npm test              # lint + validate + unit + fixture tests
+npm run package       # reproducible dist/*.zip for Chromium and Firefox
 ```
 
-### Layout of the repository
+There are three kinds of tests, and they prove different things:
+
+| Suite | What it is | What it proves | Last result |
+|---|---|---|---|
+| **Unit** (`tests/unit`) | Node's test runner on the content scripts: portrait detection, URL classification, event wiring, idempotent start and full cleanup | The logic is correct | 30 passed, 0 failed |
+| **Chromium fixture tests** (`tests/e2e`) | Real Chromium with the real unpacked extension, against a simulated YouTube page: layout geometry at 1080×1920, 1440×2560, 1200×1920 and 720×1280 (portrait) and 1920×1080 and 1280×720 (landscape), live chat, resize round-trips with the same `<video>` and chat iframe surviving, SPA navigation and Back, fullscreen, theater mode, browse pages. Includes a no-extension control that must fail the edge-to-edge assertion | The CSS does what it claims *against the DOM captured in the fixture*. Deterministic; runs in CI | 32 passed, 0 failed |
+| **Live smoke tests** (`tests/live`) | The same style of checks on the real youtube.com, logged out | The layout works on the real site — where YouTube serves a usable page | 3 passed, 0 failed, 2 skipped (home feed rendered no items; livestream page not served) |
+
+The live suite never tries to get around YouTube's bot checks: when no normal page is served, the test is **skipped with a reason**, not counted as passed. Because it depends on the network and on YouTube's current markup, CI runs it only when triggered manually. CI (`.github/workflows/ci.yml`) runs lint, validation, unit and fixture tests on every push and pull request, and builds the release archives.
+
+To regenerate the README images: `npm run screenshots:live`, `npm run screenshots:fixture`, `npm run screenshots:install` (see [`scripts/capture-screenshots.mjs`](scripts/capture-screenshots.mjs)).
 
 ```
 manifest.json
-src/content/   portrait.js (viewport detection) · pages.js (URL → page kind)
-               navigation.js (YouTube SPA events) · index.js (wires them up)
-src/styles/    base.css · watch.css · live.css · browse.css
-tests/unit/    pure-logic tests
-tests/e2e/     Playwright against tests/fixtures/youtube.html
-tests/live/    smoke tests against real YouTube
-scripts/       validate.mjs · package.mjs
+src/content/    portrait.js · pages.js · navigation.js · index.js
+src/styles/     base.css · watch.css · live.css · browse.css
+tests/          unit/ · e2e/ · live/ · fixtures/youtube.html
+scripts/        validate.mjs · package.mjs · capture-screenshots.mjs
+docs/screenshots/
 ```
 
-### Three kinds of tests, and what each proves
+### YouTube DOM assumptions
 
-1. **Unit tests** — portrait detection, URL classification, event wiring, idempotent start / full cleanup.
-2. **Fixture browser tests** (`tests/e2e`, run in CI) — a real Chromium loads the real unpacked extension, and `tests/fixtures/youtube.html` stands in for YouTube. The fixture is *not* a copy of YouTube: it reproduces the ids, wrappers, attributes, native width/min/max rules and SPA navigation events that the extension depends on, taken from inspecting real pages, so that results are deterministic. It proves the CSS does what it claims against that structure; it cannot prove YouTube's current DOM still matches. Includes a no-extension control that must fail the edge-to-edge assertion.
-3. **Live smoke tests** (`tests/live`, manual: `npm run test:live` or the manual CI input) — the same checks on the real site, logged out. They depend on the network and on YouTube not showing an anti-bot page to automated browsers; if it does, the test is **skipped with a reason**, never reported as passed, and nothing tries to get around it.
+YouTube changes its markup without notice. If the layout breaks, check these first (all in `src/styles/`):
 
-`npm run validate` also enforces design rules statically: no permissions, a single `https://www.youtube.com/*` match, every CSS selector gated on `html.ytvm-portrait`, no z-index above 10, no network calls, no `createElement`/`innerHTML`/DOM insertion, no `MutationObserver`/`setInterval`.
+- Watch page: `ytd-watch-flexy` with `#columns`, `#primary`, `#primary-inner`, `#below`, `#secondary`, `#secondary-inner`; `#player`, `#player-container-outer`, `#player-container-inner` (sized by a padding-top ratio rule); the `--ytd-watch-flexy-width-ratio` / `-height-ratio` variables; two `#below > .box` elements, the comments one found with `:has(#comments)`; `#related`, `#playlist`, `#chat-container`; `ytd-live-chat-frame` containing `iframe#chatframe`; the `fullscreen` and `theater` attributes.
+- Browse pages: `ytd-rich-grid-renderer` and its `--ytd-rich-grid-*` variables; `ytd-search #container`, `ytd-item-section-renderer`, `ytd-video-renderer`; `ytd-two-column-browse-results-renderer`; `ytd-playlist-sidebar-renderer`; `ytd-mini-guide-renderer`.
+- Events: `yt-navigate-start`, `yt-navigate-finish`, `yt-page-data-updated`, `yt-page-type-changed`.
 
-## How native components are kept intact
+If an element is missing, its rules simply match nothing and YouTube's own layout shows through.
 
-* **CSS-only relocation.** Nothing is cloned, re-parented or recreated. On the watch page YouTube's wrappers (`#primary`, `#primary-inner`, `#below`, `#secondary`, `#secondary-inner`) are set to `display: contents`, which makes the *mounted* player, metadata, chat, comments and recommendations direct children of the `#columns` grid. They are then placed with `grid-column`/`order`. The `<video>`, the chat `<iframe>`, and all of Polymer's internal state never move, so playback and the chat session survive layout changes.
-* **The player's height is still YouTube's.** YouTube sizes the player with `padding-top: height-ratio / width-ratio × 100%`. The extension only removes the width limits (`max-width`, `min-width`, side margins), so the height always follows the video's own aspect ratio. No cropping, stretching or forced 50%-height.
-* **No observers or polling.** The only dynamic state is two kinds of class on `<html>`: portrait/landscape (resize events coalesced to one check per frame) and the page family (from the URL on YouTube's `yt-navigate-*` events and `popstate`). Late-loading comments, recommendations and chat need no JavaScript at all because CSS applies to them whenever they appear. After the orientation flips, one synthetic `resize` event is dispatched so YouTube's own responsive code re-measures; it does not touch the video.
-* **Overlays are not clipped.** No `overflow: hidden` is added to containers; the guide (hamburger) is YouTube's own overlay and no longer reserves width.
-* **Native fullscreen** is excluded by `:not([fullscreen])` on all watch-page rules.
-* **`!important` is used on structural properties only** (display, widths, margins) because YouTube sets them with long attribute selectors that vary between experiments.
+## Privacy
 
-## YouTube DOM assumptions (maintenance checklist)
+- **Permissions requested: none.** `manifest.json` declares no `permissions` and no `host_permissions`; its only declaration is a content script for `https://www.youtube.com/*` (embeds and the chat iframe documents are excluded).
+- **No network requests, no remote code, no analytics or telemetry.** There is no background page, no `fetch`, no storage and no external assets.
+- **No data collected.** The script reads only the viewport size and the URL path. It never reads, stores or sends comments, chat messages, watch history, account information or any page content.
 
-When YouTube changes its UI, these are the things to re-check first. Source: `src/styles/*.css`.
+`npm run validate` checks these properties on every CI run.
 
-| Assumption | Used for |
-|---|---|
-| `ytd-watch-flexy` with `#columns`, `#primary`, `#primary-inner`, `#below`, `#secondary`, `#secondary-inner` | watch grid |
-| `#player`, `#player-container-outer`, `#player-container-inner` with the padding-top ratio rule; `--ytd-watch-flexy-width-ratio` / `-height-ratio` custom properties | edge-to-edge player, chat height |
-| `#below > .box` (two of them); the comments one is found with `:has(#comments)` | comments column |
-| `#related`, `#playlist`, `#panels`, `#chat-container`, `#donation-shelf` | placement of recommendations, playlist, panels, chat |
-| `ytd-live-chat-frame` (+ `[collapsed]`) containing `iframe#chatframe` | chat height |
-| `ytd-watch-flexy[fullscreen]`, `[theater]`, `#full-bleed-container`, `#player-full-bleed-container` | fullscreen exclusion, theater |
-| `--ytd-watch-compact-thumbnail-width` | recommendation thumbnail size |
-| `ytd-rich-grid-renderer` and its `--ytd-rich-grid-*` properties | home / subscriptions / channel grid |
-| `ytd-search #container`, `ytd-item-section-renderer > #contents > ytd-video-renderer #dismissible`, `ytd-thumbnail` | search layout |
-| `ytd-two-column-browse-results-renderer` with `#primary`/`#secondary`; `ytd-playlist-sidebar-renderer` | playlist, history |
-| `ytd-page-manager`, `ytd-mini-guide-renderer`, `ytd-app[guide-persistent-and-visible]` | guide overlay |
-| `yt-navigate-start`, `yt-navigate-finish`, `yt-page-data-updated`, `yt-page-type-changed` events | page-kind updates |
+## Limitations
 
-If an expected element is absent, the corresponding rules simply match nothing and YouTube's own layout shows through; the worst case of a YouTube change is a page that looks like stock YouTube or a cosmetic issue, not a broken page.
+Please read these before relying on the extension.
 
-## Privacy and permissions
-
-* **Permissions requested: none.** The manifest has no `permissions` and no `host_permissions`; the only declaration is a content script on `https://www.youtube.com/*` (excluding embeds and the chat iframe documents).
-* The extension makes **no network requests**, has no background page, loads **no remote code or assets**, has no analytics or telemetry, and never reads, stores or transmits comments, chat messages, history or account data. It does not read page content at all: JavaScript only looks at the viewport size and the URL path. `npm run validate` enforces these properties on every CI run.
-
-## Known limitations
-
-* **Authenticated behavior is untested.** All tests ran logged out. Logged-in variations (comment posting, chat input, subscription feed contents, notifications contents, Studio, moderation tools) rely on being native elements that are only repositioned, but this has not been exercised on a signed-in session.
-* **Live-site coverage is partial** — see the verification table below. Anything marked "fixture only" matches YouTube's DOM as inspected, but was not confirmed on the live site.
-* **Vertical (non-Shorts) videos and unusual aspect ratios:** the player keeps YouTube's own ratio logic. A 9:16 video on `/watch` gets a very tall player; its handling is YouTube's, not changed here, and is untested.
-* **Videos with black bars baked in** keep them; the extension never crops.
-* **Firefox** is packaged but untested.
-* Engagement panels (transcript, chapters) stay full-width rows under the video info rather than a side panel.
-* The 2-column search and home layouts, and the playlist/history stacking, are best-effort overrides of YouTube's internal CSS custom properties, which YouTube can rename at any time.
-* Mobile (`m.youtube.com`), YouTube Music, YouTube Kids, embeds and the standalone chat popout are out of scope.
-* Browser zoom was verified by equivalence (the viewports below in CSS pixels), not by driving the zoom UI.
-
-## Verification status
-
-See the final section of the delivery notes in the repository's release/PR description for the exact counts of the most recent run; CI runs everything except the live tests on every push.
+- **Livestreams are fixture-tested only.** YouTube would not serve a livestream page (or its chat) to the logged-out automated browser, so the chat layout has never been confirmed on a real stream. The chat element names it relies on come from the fixture, not from a live capture.
+- **Home, subscriptions, channels, playlists, history and Shorts are fixture-tested only**, apart from the checks listed in [Supported pages](#supported-pages). Home and playlist/history overrides depend on YouTube's internal CSS variables, which may differ from the fixture.
+- **Logged-in behavior is untested.** Everything was tested logged out; posting comments, using the chat box, moderation tools and a signed-in header have not been exercised.
+- **Real playback was not tested on youtube.com** — YouTube showed its bot check in place of the video. Playback and fullscreen behavior were tested against a real `<video>` and the real Fullscreen API on the fixture.
+- **Recommendation thumbnails are large.** A rule intended to shrink them (`--ytd-watch-compact-thumbnail-width`) has no visible effect on YouTube's current markup, so in the right column they take about 60% of the column width, as the screenshot shows. It is a cosmetic issue, not a functional one.
+- **Not tested:** Firefox, Safari, Edge directly, vertical (non-Shorts) videos, non-16:9 videos, and the browser zoom UI (zoom was checked by testing the equivalent CSS-pixel viewports; F11 only by viewport size).
+- Mobile (`m.youtube.com`), YouTube Music, YouTube Kids and embedded players are out of scope.
 
 ## License
 
-MIT
+Released under the [MIT License](LICENSE). Copyright (c) 2026 FarmaanFJM.
+
+## Contributing and reporting issues
+
+Issues and pull requests are welcome.
+
+- **Found a layout problem?** [Open an issue](https://github.com/FarmaanFJM/youtube-vertical-monitor-layout/issues) with your browser and version, the window size in CSS pixels, the page URL (for example a `/watch`, `/results` or `/feed/subscriptions` page), whether you were logged in, and a screenshot. YouTube changes its markup often, so "worked last month" reports are useful.
+- **Sending a change?** Keep it to layout: relocating and resizing YouTube's own elements. Run `npm test` before opening a pull request; CI runs the same checks. New layout rules must start with `html.ytvm-portrait` (`npm run validate` enforces this) and should come with a fixture test.
