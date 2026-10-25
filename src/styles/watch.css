@@ -1,0 +1,178 @@
+/*
+ * Watch page (regular videos, playlists playback, and the shared part of
+ * livestreams).
+ *
+ * Technique: YouTube's own wrappers (#primary, #below, #secondary, ...) are
+ * flattened with `display: contents`, which makes the *real* mounted elements
+ * (player, metadata, chat, comments, recommendations) direct grid items of
+ * #columns. Nothing is moved in the DOM, so the player, chat iframe and all
+ * their state stay mounted.
+ *
+ * Grid rows (via `order`; all but comments/related span both columns):
+ *   1 player   2 playlist   3 chat   4 metadata   5 panels   6 comments | related
+ *
+ * Native fullscreen is excluded with :not([fullscreen]) so YouTube's own
+ * fullscreen player is untouched.
+ */
+
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) {
+  /* Compact recommendation rows: thumbnail ~40% of the half-width column. */
+  --ytd-watch-compact-thumbnail-width: 40% !important;
+  --ytvm-player-ratio: calc(var(--ytd-watch-flexy-height-ratio, 9) / var(--ytd-watch-flexy-width-ratio, 16));
+}
+
+/* ---- the grid ---------------------------------------------------------- */
+
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #columns {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-auto-flow: row;
+  align-items: start;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important; /* menus and popovers must not be clipped */
+}
+/* Spacer pseudo-elements YouTube adds for its fixed side rail would become grid items. */
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #columns::before,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #columns::after {
+  display: none !important;
+}
+
+/* Flatten YouTube's wrappers so the real components become grid items. */
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #primary,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #primary-inner,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #below,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #secondary,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #secondary-inner {
+  display: contents !important;
+  /* `visibility`/`pointer-events` are inherited; undo YouTube's side-rail hiding. */
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+/* Every grid item may shrink below its content width. */
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #columns > * ,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #primary-inner > *,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #below > *,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #secondary-inner > * {
+  min-width: 0 !important;
+  max-width: none !important;
+  box-sizing: border-box;
+}
+
+/* Default placement for anything unknown: a full-width row after the metadata. */
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #primary-inner > *,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #below > *,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #secondary-inner > * {
+  grid-column: 1 / -1;
+  order: 5;
+  margin-left: var(--ytvm-gutter) !important;
+  margin-right: var(--ytvm-gutter) !important;
+}
+
+/* ---- 1. player: edge to edge ------------------------------------------ */
+
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #player {
+  order: 1;
+  grid-column: 1 / -1;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+/*
+ * YouTube sizes the player as `padding-top: height-ratio / width-ratio * 100%`
+ * of #player-container-inner. We only remove the width limits and keep that
+ * ratio rule, so the height always follows the video's native aspect ratio.
+ */
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #player-container-outer {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+}
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #player-container-inner {
+  width: 100% !important;
+}
+/* No rounded corners on an edge-to-edge player. */
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #player-container,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #player-container-inner,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) ytd-player,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #movie_player,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #movie_player .html5-video-container,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #movie_player video {
+  border-radius: 0 !important;
+}
+
+/* Theater mode keeps YouTube's full-bleed container, minus its height caps. */
+html.ytvm-portrait ytd-watch-flexy[theater]:not([fullscreen]) #full-bleed-container,
+html.ytvm-portrait ytd-watch-flexy[theater]:not([fullscreen]) #player-full-bleed-container {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important; /* the height follows the video ratio, not a fixed minimum */
+  max-height: none !important;
+}
+
+/* ---- 2. playlist panel ------------------------------------------------- */
+
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #playlist {
+  order: 2;
+  grid-column: 1 / -1;
+  margin-top: var(--ytvm-gutter) !important;
+  margin-bottom: 0 !important;
+}
+
+/* ---- 4. video information --------------------------------------------- */
+
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #below > * {
+  order: 4;
+}
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #below > .box {
+  margin-top: var(--ytvm-gutter);
+}
+
+/* ---- 5. other panels (transcript, chapters, donation shelf, ...) ------ */
+
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #panels,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #inline-panels,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #persistent-panel-container,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #donation-shelf {
+  order: 5;
+  grid-column: 1 / -1;
+}
+
+/* ---- 6. comments (left) | recommendations (right) --------------------- */
+
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #below > .box:has(#comments) {
+  order: 6;
+  grid-column: 1;
+  margin-right: calc(var(--ytvm-gutter) / 2) !important;
+}
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #related {
+  order: 6;
+  grid-column: 2;
+  margin-top: var(--ytvm-gutter) !important;
+  margin-left: calc(var(--ytvm-gutter) / 2) !important;
+  width: auto !important;
+}
+/* YouTube moves #related into #below in narrow windows; same place either way. */
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #below > #related {
+  order: 6;
+  grid-column: 2;
+}
+
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #comments,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #related ytd-watch-next-secondary-results-renderer {
+  min-width: 0;
+  max-width: 100%;
+}
+/* Comment text, titles and usernames wrap naturally. */
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #comments,
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #related {
+  overflow-wrap: anywhere;
+}

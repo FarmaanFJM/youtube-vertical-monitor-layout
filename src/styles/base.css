@@ -1,0 +1,38 @@
+/*
+ * Shared portrait rules. Every rule in this extension is gated on
+ * `html.ytvm-portrait`, so removing that class restores YouTube's own layout.
+ *
+ * !important is used for structural properties (display, widths, margins)
+ * because YouTube sets many of them with high-specificity, attribute-heavy
+ * selectors that change between experiments.
+ */
+
+html.ytvm-portrait {
+  --ytvm-gutter: 12px;
+  --ytvm-masthead-height: 56px;
+}
+
+/* The guide (hamburger menu) must overlay the page, never push or narrow it. */
+html.ytvm-portrait ytd-page-manager {
+  margin-left: 0 !important;
+}
+html.ytvm-portrait ytd-mini-guide-renderer,
+html.ytvm-portrait ytd-app[mini-guide-visible] ytd-mini-guide-renderer {
+  display: none !important;
+}
+html.ytvm-portrait ytd-app[guide-persistent-and-visible] ytd-page-manager {
+  margin-left: 0 !important;
+}
+
+/* Long text must wrap instead of widening the page. */
+html.ytvm-portrait ytd-page-manager {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+/* Thumbnails and images never overflow their column. */
+html.ytvm-portrait ytd-page-manager img,
+html.ytvm-portrait ytd-page-manager yt-image,
+html.ytvm-portrait ytd-page-manager ytd-thumbnail {
+  max-width: 100%;
+}

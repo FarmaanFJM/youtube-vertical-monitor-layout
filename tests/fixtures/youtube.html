@@ -1,0 +1,309 @@
+<!doctype html>
+<!--
+  Deterministic stand-in for www.youtube.com used by the Playwright fixture tests.
+
+  It is NOT a copy of YouTube. It reproduces the pieces of YouTube's DOM and
+  *native* CSS that the extension depends on (ids, wrappers, attributes, the
+  width/min-width/max-width rules of the desktop layout, the SPA navigation
+  events), taken from inspecting real pages. The extension's real content
+  scripts and stylesheets run against it unchanged.
+
+  Served by tests/e2e via page.route for every https://www.youtube.com/ URL.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YouTube fixture</title>
+<style>
+  html { font: 14px/1.4 Roboto, Arial, sans-serif; color: #0f0f0f; background: #fff; }
+  body { margin: 0; }
+  @media (prefers-color-scheme: dark) { html { color: #f1f1f1; background: #0f0f0f; } }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; cursor: pointer; }
+  ytd-app { display: block; }
+
+  /* ---------- masthead + guide (native behaviour) ---------- */
+  #masthead-container { position: fixed; top: 0; left: 0; right: 0; height: 56px; display: flex; align-items: center; gap: 8px; padding: 0 16px; background: inherit; box-sizing: border-box; z-index: 2020; }
+  #masthead-container #search { flex: 0 1 540px; min-width: 60px; height: 32px; box-sizing: border-box; }
+  #masthead-container .spacer { flex: 1; }
+  tp-yt-app-drawer#guide { position: fixed; top: 56px; left: 0; bottom: 0; width: 240px; background: #f2f2f2; transform: translateX(-100%); z-index: 2030; }
+  tp-yt-app-drawer#guide[opened] { transform: none; }
+  ytd-mini-guide-renderer { display: block; position: fixed; top: 56px; left: 0; bottom: 0; width: 72px; background: #eee; }
+  ytd-app[is-watch-page] ytd-mini-guide-renderer { display: none; }
+  ytd-page-manager { display: block; margin-top: 56px; margin-left: 72px; }
+  ytd-app[is-watch-page] ytd-page-manager { margin-left: 0; }
+  .popup { position: fixed; top: 56px; right: 8px; width: 200px; padding: 8px; background: #fff; border: 1px solid #ccc; z-index: 2040; }
+  .popup[hidden] { display: none; }
+
+  /* ---------- watch page: native two-column desktop layout (from YouTube's CSS) ---------- */
+  ytd-watch-flexy { display: block; --ytd-watch-flexy-width-ratio: 16; --ytd-watch-flexy-height-ratio: 9; --ytd-watch-flexy-sidebar-width: 402px; --ytd-watch-flexy-sidebar-min-width: 300px; --ytd-watch-flexy-horizontal-page-margin: 24px; --ytd-watch-flexy-top-padding: 24px; --ytd-watch-flexy-min-player-height: 240px; --ytd-watch-flexy-min-player-width: calc(240px*(16/9)); --ytd-watch-flexy-max-player-width-wide-screen: 1280px; --ytd-watch-flexy-max-player-width: calc((100vh - 56px - 12px - 48px)*(16/9)); --ytd-watch-flexy-masthead-height: 56px; --ytd-watch-flexy-chat-max-height: 360px; }
+  #columns.ytd-watch-flexy { margin: 0 auto; display: flex; flex-direction: row; justify-content: center; max-width: calc(var(--ytd-watch-flexy-max-player-width-wide-screen) + var(--ytd-watch-flexy-sidebar-width) + var(--ytd-watch-flexy-horizontal-page-margin)*3); }
+  ytd-watch-flexy[is-two-columns_]:not([full-bleed-player]) #columns { min-width: calc(var(--ytd-watch-flexy-min-player-height)*16/9 + var(--ytd-watch-flexy-horizontal-page-margin)*3 + var(--ytd-watch-flexy-sidebar-min-width)); }
+  #primary.ytd-watch-flexy { padding-right: var(--ytd-watch-flexy-horizontal-page-margin); margin-left: var(--ytd-watch-flexy-horizontal-page-margin); flex: 1 1 1e-9px; min-width: var(--ytd-watch-flexy-min-player-width); padding-top: var(--ytd-watch-flexy-top-padding); }
+  ytd-watch-flexy[is-two-columns_]:not([is-four-three-to-sixteen-nine-video_]):not([is-extra-wide-video_]) #primary { max-width: calc(177.77777778vh - var(--ytd-watch-flexy-masthead-height)*1.7777777778 - 24px*1.7777777778 - 48px*1.7777777778); }
+  #secondary.ytd-watch-flexy { padding-right: var(--ytd-watch-flexy-horizontal-page-margin); width: var(--ytd-watch-flexy-sidebar-width); min-width: var(--ytd-watch-flexy-sidebar-min-width); position: relative; padding-top: var(--ytd-watch-flexy-top-padding); }
+  ytd-watch-flexy:not([is-two-columns_]) #secondary { display: none; }
+  #player.ytd-watch-flexy { position: relative; }
+  #player-container-outer.ytd-watch-flexy { max-width: var(--ytd-watch-flexy-max-player-width); min-width: var(--ytd-watch-flexy-min-player-width); margin: 0 auto; }
+  #player-container-inner.ytd-watch-flexy { padding-top: calc(var(--ytd-watch-flexy-height-ratio)/var(--ytd-watch-flexy-width-ratio)*100%); position: relative; }
+  #player-container.ytd-watch-flexy { position: absolute; inset: 0; }
+  ytd-player, ytd-player #container { display: block; width: 100%; height: 100%; }
+  ytd-watch-flexy[rounded-player] #player-container { border-radius: 12px; overflow: hidden; }
+  ytd-watch-flexy[fullscreen] #columns, ytd-watch-flexy[fullscreen] #single-column-container { display: none; }
+  ytd-watch-flexy[theater]:not([fullscreen]) #full-bleed-container { max-height: calc(100vh - 169px); min-height: 480px; }
+  ytd-watch-flexy[fullscreen] #full-bleed-container { position: fixed; inset: 0; z-index: 3000; }
+  #below.ytd-watch-flexy { position: relative; }
+  #movie_player { position: relative; width: 100%; height: 100%; background: #000; overflow: hidden; }
+  #movie_player .html5-video-container { position: absolute; inset: 0; }
+  #movie_player video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+  #movie_player .ytp-chrome-bottom { position: absolute; left: 0; right: 0; bottom: 0; height: 40px; display: flex; gap: 8px; align-items: center; padding: 0 12px; }
+  #movie_player:fullscreen { width: 100vw; height: 100vh; }
+  .box.ytd-watch-flexy { margin-top: 16px; }
+  #chat.ytd-watch-flexy { display: flex; flex-direction: column; height: var(--ytd-watch-flexy-chat-max-height); border: 1px solid #ccc; border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
+  #chat iframe { flex: 1; width: 100%; border: 0; }
+  #chat[collapsed] { height: auto; }
+  #chat[collapsed] iframe { display: none; }
+  ytd-live-chat-frame #show-hide-button { padding: 8px; }
+  ytd-compact-video-renderer { display: flex; gap: 8px; margin-bottom: 8px; }
+  ytd-compact-video-renderer .thumb { flex: none; width: var(--ytd-watch-compact-thumbnail-width, 168px); aspect-ratio: 16/9; }
+  ytd-compact-video-renderer .details { min-width: 0; }
+  ytd-comment-thread-renderer { display: block; padding: 8px 0; }
+  ytd-playlist-panel-renderer { display: block; border: 1px solid #ccc; border-radius: 12px; max-height: 360px; overflow: auto; margin-bottom: 16px; }
+  ytd-playlist-panel-renderer[hidden] { display: none; }
+  .thumb { background: linear-gradient(135deg, #36c, #c36); border-radius: 8px; }
+  .menu-host { position: relative; display: inline-block; }
+  .menu-host .popup-inline { position: absolute; z-index: 5; top: 100%; left: 0; background: #fff; border: 1px solid #ccc; padding: 4px 8px; white-space: nowrap; }
+  .menu-host .popup-inline[hidden] { display: none; }
+
+  /* ---------- browse pages (native desktop layout) ---------- */
+  ytd-browse, ytd-search { display: block; }
+  ytd-two-column-browse-results-renderer { display: flex; max-width: 1096px; margin: 0 auto; }
+  ytd-two-column-browse-results-renderer #primary { flex: 1; min-width: 0; }
+  ytd-two-column-browse-results-renderer #secondary { width: 360px; flex: none; }
+  ytd-browse[page-subtype="home"] ytd-two-column-browse-results-renderer, ytd-browse[page-subtype="subscriptions"] ytd-two-column-browse-results-renderer, ytd-browse[page-subtype="channel"] ytd-two-column-browse-results-renderer { max-width: none; }
+  ytd-rich-grid-renderer { display: block; --ytd-rich-grid-items-per-row: 3; --ytd-rich-grid-item-margin: 16px; --ytd-rich-grid-item-max-width: 700px; --ytd-rich-grid-item-min-width: 286px; padding: 0 24px; }
+  ytd-rich-grid-renderer #contents { display: flex; flex-wrap: wrap; }
+  ytd-rich-item-renderer { box-sizing: border-box; width: calc(100% / var(--ytd-rich-grid-items-per-row)); min-width: var(--ytd-rich-grid-item-min-width); max-width: var(--ytd-rich-grid-item-max-width); padding: 0 8px 24px; }
+  ytd-rich-item-renderer .thumb { aspect-ratio: 16/9; }
+  ytd-browse ytd-playlist-sidebar-renderer { position: fixed; top: 56px; left: 72px; bottom: 0; width: 360px; padding: 16px; box-sizing: border-box; background: #eee; }
+  ytd-browse[page-subtype="playlist"] ytd-two-column-browse-results-renderer { margin-left: 432px; max-width: none; }
+  ytd-search #container { max-width: 1096px; margin: 0 auto; padding: 0 24px; }
+  ytd-video-renderer { display: block; margin-bottom: 16px; }
+  ytd-video-renderer #dismissible { display: flex; gap: 16px; }
+  ytd-video-renderer ytd-thumbnail { flex: none; width: 360px; max-width: 360px; }
+  ytd-video-renderer .thumb { aspect-ratio: 16/9; }
+  ytd-video-renderer .text-wrapper { flex: 1; min-width: 0; }
+  ytd-shorts { display: flex; justify-content: center; height: calc(100vh - 56px); background: #000; }
+  ytd-shorts #shorts-player { height: 100%; aspect-ratio: 9/16; background: #222; }
+  ytd-shorts video { width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<ytd-app>
+  <div id="masthead-container">
+    <button id="guide-button" aria-label="Guide">☰</button>
+    <a id="logo" href="/" data-spa aria-label="YouTube Home">YouTube</a>
+    <div class="spacer"></div>
+    <form id="search-form" action="/results" style="display:contents">
+      <input id="search" name="search_query" type="text" placeholder="Search" aria-label="Search">
+      <button id="search-icon-legacy" type="submit" aria-label="Search">⌕</button>
+    </form>
+    <div class="spacer"></div>
+    <button id="notifications-button" aria-label="Notifications">🔔</button>
+    <button id="avatar-btn" aria-label="Account menu">👤</button>
+  </div>
+  <div id="notifications-popup" class="popup" hidden>No notifications</div>
+  <div id="account-popup" class="popup" hidden>Sign in</div>
+  <tp-yt-app-drawer id="guide"><a href="/feed/subscriptions" data-spa>Subscriptions</a></tp-yt-app-drawer>
+  <ytd-mini-guide-renderer>mini</ytd-mini-guide-renderer>
+  <ytd-page-manager id="page-manager"></ytd-page-manager>
+</ytd-app>
+
+<script>
+(function () {
+  const app = document.querySelector('ytd-app');
+  const manager = document.getElementById('page-manager');
+  const lorem = 'A deliberately long sentence_without_spaces_that_must_wrap_instead_of_overflowing_the_column_in_portrait_mode and some more words to wrap naturally.';
+  const state = { chatLoads: 0, videoEvents: [] };
+  window.__fixture = state;
+
+  const cards = (n) => Array.from({ length: n }, (_, i) =>
+    `<ytd-rich-item-renderer><div class="thumb"></div><a href="/watch?v=v${i}" data-spa class="title">Video ${i} ${lorem.slice(0, 40)}</a><div>Channel ${i}</div></ytd-rich-item-renderer>`).join('');
+
+  const results = (n) => Array.from({ length: n }, (_, i) =>
+    `<ytd-video-renderer><div id="dismissible"><ytd-thumbnail><div class="thumb"></div></ytd-thumbnail><div class="text-wrapper"><a href="/watch?v=r${i}" data-spa>Result ${i} ${lorem.slice(0, 50)}</a><div>Channel ${i} · 1M views</div></div></div></ytd-video-renderer>`).join('');
+
+  const compact = (n) => Array.from({ length: n }, (_, i) =>
+    `<ytd-compact-video-renderer><div class="thumb"></div><div class="details"><a href="/watch?v=rec${i}" data-spa class="rec-title">Recommended ${i} ${lorem.slice(0, 60)}</a><div>Channel ${i}</div><div class="menu-host"><button class="rec-menu" aria-label="Action menu">⋮</button><div class="popup-inline" hidden>Add to queue</div></div></div></ytd-compact-video-renderer>`).join('');
+
+  const comments = (n) => Array.from({ length: n }, (_, i) =>
+    `<ytd-comment-thread-renderer><b>@user${i}</b> ${lorem}<div><button class="like">👍 ${i}</button> <button class="reply-btn">Reply</button> <span class="replies" hidden>reply text</span></div></ytd-comment-thread-renderer>`).join('');
+
+  const chatDoc = `<!doctype html><style>html,body{height:100%}</style><body style="margin:0;font:13px sans-serif"><div id="items" style="height:100%;overflow:auto"></div><script>
+    parent.__fixture.chatLoads++;
+    const items = document.getElementById('items'); let n = 0;
+    function add() { const d = document.createElement('div'); d.textContent = 'chat message ' + (n++) + ' hello world'; d.style.padding = '4px 8px'; items.appendChild(d); items.scrollTop = items.scrollHeight; }
+    for (let i = 0; i < 80; i++) add();
+    window.addMessage = add;
+    <\/script></body>`;
+
+  function watchTemplate(live) {
+    return `
+<ytd-watch-flexy class="style-scope ytd-page-manager" video-id="x" default-layout rounded-player ${live ? 'live-chat-present live-chat-present-and-expanded' : ''}>
+  <div id="full-bleed-container"><div id="player-full-bleed-container"></div></div>
+  <div id="single-column-container"></div>
+  <div id="columns">
+    <div id="primary"><div id="primary-inner">
+      <div id="player"><div id="player-container-outer"><div id="player-container-inner"><div id="player-container">
+        <ytd-player id="ytd-player"><div id="container"><div id="movie_player" class="html5-video-player" tabindex="0">
+          <div class="html5-video-container"><video id="fixture-video" muted playsinline loop></video></div>
+          <div class="ytp-chrome-bottom"><button class="ytp-play-button" aria-label="Play">▶</button><button class="ytp-fullscreen-button" aria-label="Full screen">⛶</button></div>
+        </div></div></ytd-player>
+      </div></div></div></div>
+      <div id="below">
+        <div id="shopping-timely-shelf" class="attached-message"></div>
+        <div class="box">
+          <div id="alerts"></div>
+          <ytd-watch-metadata>
+            <h1 class="title">${live ? 'Live: ' : ''}Fixture video title ${lorem.slice(0, 50)}</h1>
+            <div id="owner"><a href="/@channel" data-spa>Channel name</a> <button class="subscribe">Subscribe</button></div>
+            <div id="actions"><button class="like">Like</button> <button>Share</button> <button>Save</button></div>
+            <div id="description"><span id="viewers">${live ? '1,234 watching now' : '446M views'}</span> description text</div>
+          </ytd-watch-metadata>
+        </div>
+        <div class="box"><ytd-comments id="comments"><h2>Comments</h2><textarea id="comment-input" placeholder="Add a comment..."></textarea>${comments(12)}</ytd-comments></div>
+      </div>
+    </div></div>
+    <div id="secondary"><div id="secondary-inner">
+      <div id="panels"></div>
+      <div id="chat-container">${live ? `<ytd-live-chat-frame id="chat"><iframe id="chatframe" srcdoc='${chatDoc.replace(/'/g, '&#39;')}'></iframe><div id="show-hide-button"><button class="chat-toggle">Hide chat</button></div></ytd-live-chat-frame>` : ''}</div>
+      <ytd-playlist-panel-renderer id="playlist" hidden><div>Playlist item 1</div><div>Playlist item 2</div></ytd-playlist-panel-renderer>
+      <div id="donation-shelf"></div>
+      <div id="related"><ytd-watch-next-secondary-results-renderer><div id="items">${compact(14)}</div></ytd-watch-next-secondary-results-renderer></div>
+    </div></div>
+  </div>
+</ytd-watch-flexy>`;
+  }
+
+  const gridPage = (subtype, header) => `
+<ytd-browse page-subtype="${subtype}">
+  ${header || ''}
+  <ytd-two-column-browse-results-renderer><div id="primary"><ytd-rich-grid-renderer><div id="contents">${cards(18)}</div></ytd-rich-grid-renderer></div><div id="secondary"></div></ytd-two-column-browse-results-renderer>
+</ytd-browse>`;
+
+  const templates = {
+    home: () => gridPage('home', '<div id="chips"><button>All</button><button>Music</button></div>'),
+    feed: (p) => p.includes('history')
+      ? `<ytd-browse page-subtype="history"><ytd-two-column-browse-results-renderer><div id="primary">${results(8)}</div><div id="secondary"><input placeholder="Search watch history"></div></ytd-two-column-browse-results-renderer></ytd-browse>`
+      : gridPage('subscriptions'),
+    channel: () => gridPage('channel', '<div id="channel-header">Channel header</div>'),
+    playlist: () => `<ytd-browse page-subtype="playlist"><ytd-playlist-sidebar-renderer><h2>Playlist title</h2></ytd-playlist-sidebar-renderer><ytd-two-column-browse-results-renderer><div id="primary">${results(8)}</div><div id="secondary"></div></ytd-two-column-browse-results-renderer></ytd-browse>`,
+    search: () => `<ytd-search><div id="container"><div id="header"><button class="chip">Filters</button></div><ytd-two-column-search-results-renderer><div id="primary"><ytd-section-list-renderer><div id="contents"><ytd-item-section-renderer><div id="contents">${results(10)}</div></ytd-item-section-renderer></div></ytd-section-list-renderer></div></ytd-two-column-search-results-renderer></div></ytd-search>`,
+    shorts: () => `<ytd-shorts><div id="shorts-player"><video id="fixture-video" muted playsinline loop></video></div></ytd-shorts>`,
+    watch: () => watchTemplate(new URLSearchParams(location.search).get('v') === 'live'),
+    other: () => '<div>Other page</div>',
+  };
+
+  function kind(path) {
+    if (path === '/') return 'home';
+    if (path === '/watch') return 'watch';
+    if (path.startsWith('/shorts/')) return 'shorts';
+    if (path === '/results') return 'search';
+    if (path === '/playlist') return 'playlist';
+    if (path.startsWith('/feed/') || path === '/history') return 'feed';
+    if (path.startsWith('/@')) return 'channel';
+    return 'other';
+  }
+
+  function twoColumns() { return window.innerWidth >= 1016; }
+  function syncColumns() {
+    const f = document.querySelector('ytd-watch-flexy');
+    if (f) f.toggleAttribute('is-two-columns_', twoColumns());
+  }
+  window.addEventListener('resize', syncColumns); // stands in for YouTube's iron-media-query
+
+  async function startVideo() {
+    const video = document.getElementById('fixture-video');
+    if (!video) return;
+    const canvas = document.createElement('canvas'); canvas.width = 320; canvas.height = 180;
+    const ctx = canvas.getContext('2d'); let t = 0;
+    setInterval(() => { ctx.fillStyle = `hsl(${(t += 3) % 360},70%,50%)`; ctx.fillRect(0, 0, 320, 180); ctx.fillStyle = '#fff'; ctx.fillRect((t * 2) % 300, 80, 20, 20); }, 40);
+    const stream = canvas.captureStream(25);
+    const rec = new MediaRecorder(stream, { mimeType: 'video/webm' }); const chunks = [];
+    rec.ondataavailable = (e) => chunks.push(e.data);
+    rec.onstop = async () => {
+      video.src = URL.createObjectURL(new Blob(chunks, { type: 'video/webm' }));
+      ['loadstart', 'emptied', 'seeking'].forEach((n) => video.addEventListener(n, () => state.videoEvents.push(n)));
+      video.uid = Math.random();
+      try { await video.play(); } catch (e) { /* autoplay muted should pass */ }
+    };
+    rec.start(); setTimeout(() => rec.stop(), 1500);
+  }
+
+  function render(navigated) {
+    const k = kind(location.pathname);
+    app.toggleAttribute('is-watch-page', k === 'watch');
+    manager.innerHTML = templates[k](location.pathname);
+    // Real YouTube tags every element with its owning component's scope class.
+    manager.querySelectorAll('ytd-watch-flexy, ytd-watch-flexy *').forEach((e) => e.classList.add('ytd-watch-flexy'));
+    window.scrollTo(0, 0);
+    syncColumns();
+    startVideo();
+    if (navigated) document.dispatchEvent(new CustomEvent('yt-navigate-finish', { detail: {} }));
+  }
+
+  // YouTube-style SPA navigation: pushState + yt-navigate-* events, no reload.
+  function navigate(url) {
+    document.dispatchEvent(new CustomEvent('yt-navigate-start', { detail: {} }));
+    history.pushState({}, '', url);
+    render(true);
+  }
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[data-spa]');
+    if (a) { e.preventDefault(); navigate(a.getAttribute('href')); }
+    if (e.target.closest('#guide-button')) document.getElementById('guide').toggleAttribute('opened');
+    if (e.target.closest('#notifications-button')) document.getElementById('notifications-popup').toggleAttribute('hidden');
+    if (e.target.closest('#avatar-btn')) document.getElementById('account-popup').toggleAttribute('hidden');
+    const menu = e.target.closest('.rec-menu'); if (menu) menu.nextElementSibling.toggleAttribute('hidden');
+    const reply = e.target.closest('.reply-btn'); if (reply) reply.parentElement.querySelector('.replies').toggleAttribute('hidden');
+    const like = e.target.closest('.like'); if (like) like.classList.toggle('liked');
+    const fs = e.target.closest('.ytp-fullscreen-button');
+    if (fs) {
+      if (document.fullscreenElement) { document.exitFullscreen(); }
+      else { hostPlayer(true); document.getElementById('movie_player').requestFullscreen(); } // re-host first: moving a fullscreen element would exit fullscreen
+    }
+    const toggle = e.target.closest('.chat-toggle');
+    if (toggle) document.getElementById('chat').toggleAttribute('collapsed');
+  });
+  document.getElementById('search-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    navigate('/results?search_query=' + encodeURIComponent(document.getElementById('search').value));
+  });
+  window.addEventListener('popstate', () => render(true));
+  // Like YouTube, theater mode and fullscreen host #player inside #player-full-bleed-container.
+  function hostPlayer(inFullBleed) {
+    const player = document.getElementById('player');
+    const target = document.getElementById(inFullBleed ? 'player-full-bleed-container' : 'primary-inner');
+    if (!player || !target || player.parentElement === target) return;
+    inFullBleed ? target.appendChild(player) : target.insertBefore(player, target.firstChild);
+  }
+  window.__fixtureSetTheater = (on) => {
+    const f = document.querySelector('ytd-watch-flexy');
+    f.toggleAttribute('theater', on);
+    hostPlayer(on);
+  };
+  // YouTube reflects native fullscreen with a `fullscreen` attribute on ytd-watch-flexy.
+  document.addEventListener('fullscreenchange', () => {
+    const f = document.querySelector('ytd-watch-flexy');
+    if (!f) return;
+    const on = !!document.fullscreenElement;
+    f.toggleAttribute('fullscreen', on);
+    hostPlayer(on || f.hasAttribute('theater'));
+  });
+  window.__fixtureNavigate = navigate;
+  render(false);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+/*
+ * Livestreams and chat replays: YouTube's native chat goes directly under the
+ * player and takes the remaining viewport height. The chat iframe stays where
+ * YouTube mounted it; only the box around it is placed and sized by CSS.
+ */
+
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) {
+  /* viewport height - masthead - player height, with a sensible minimum */
+  --ytvm-chat-height: max(
+    480px,
+    calc(100dvh - var(--ytvm-masthead-height) - (100vw * var(--ytvm-player-ratio)) - var(--ytvm-gutter))
+  );
+}
+
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #chat-container {
+  order: 3;
+  grid-column: 1 / -1;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #chat-container:not(:empty) {
+  margin: 0 var(--ytvm-gutter) !important;
+}
+
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #chat-container ytd-live-chat-frame {
+  width: 100% !important;
+  max-width: none !important;
+  margin: var(--ytvm-gutter) 0 0 !important;
+}
+/* Expanded chat fills the remaining height; the collapsed "Show chat" bar keeps its own height. */
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #chat-container ytd-live-chat-frame:not([collapsed]) {
+  height: var(--ytvm-chat-height) !important;
+  min-height: 0 !important;
+  max-height: none !important;
+}
+html.ytvm-portrait ytd-watch-flexy:not([fullscreen]) #chat-container ytd-live-chat-frame:not([collapsed]) iframe#chatframe {
+  width: 100% !important;
+  height: 100% !important;
+}

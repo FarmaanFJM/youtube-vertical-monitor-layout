@@ -1,0 +1,135 @@
+/*
+ * Browsing pages: home, subscriptions and other feeds, channels, search
+ * results, playlists, history. We lift YouTube's width caps and sidebar
+ * margins and retune the grids YouTube already renders. No elements are
+ * added, moved or replaced.
+ *
+ * Breakpoint: two columns of cards down to 600px, one column below that.
+ */
+
+/* ---- shared: no max-width columns, no reserved sidebar ----------------- */
+
+html.ytvm-portrait ytd-browse,
+html.ytvm-portrait ytd-search,
+html.ytvm-portrait ytd-two-column-browse-results-renderer,
+html.ytvm-portrait ytd-two-column-search-results-renderer {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+
+/* ---- home, subscriptions, channel videos: the rich grid ---------------- */
+
+html.ytvm-portrait ytd-rich-grid-renderer {
+  --ytd-rich-grid-items-per-row: 2 !important;
+  --ytd-rich-grid-posts-per-row: 2 !important;
+  --ytd-rich-grid-slim-items-per-row: 2 !important;
+  --ytd-rich-grid-channel-items-per-row: 3 !important;
+  --ytd-rich-grid-item-max-width: none !important;
+  --ytd-rich-grid-item-min-width: 0px !important;
+  --ytd-rich-grid-gutter-margin: var(--ytvm-gutter) !important;
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box;
+}
+html.ytvm-portrait ytd-rich-grid-renderer ytd-rich-item-renderer,
+html.ytvm-portrait ytd-rich-grid-renderer ytd-rich-grid-media {
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+@media (max-width: 600px) {
+  html.ytvm-portrait ytd-rich-grid-renderer {
+    --ytd-rich-grid-items-per-row: 1 !important;
+    --ytd-rich-grid-posts-per-row: 1 !important;
+    --ytd-rich-grid-slim-items-per-row: 1 !important;
+  }
+}
+
+/* ---- search results ---------------------------------------------------- */
+
+html.ytvm-portrait ytd-search #container,
+html.ytvm-portrait ytd-search ytd-two-column-search-results-renderer #primary,
+html.ytvm-portrait ytd-search ytd-section-list-renderer {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+html.ytvm-portrait ytd-search #container {
+  padding: 0 var(--ytvm-gutter) !important;
+  margin: 0 !important;
+}
+
+/* Result list: a two-column grid; shelves, channels and playlists span the row. */
+html.ytvm-portrait ytd-search ytd-item-section-renderer > #contents {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ytvm-gutter) calc(var(--ytvm-gutter) * 2);
+  align-items: start;
+}
+html.ytvm-portrait ytd-search ytd-item-section-renderer > #contents > * {
+  min-width: 0;
+  grid-column: 1 / -1;
+}
+html.ytvm-portrait ytd-search ytd-item-section-renderer > #contents > ytd-video-renderer {
+  grid-column: auto;
+  margin: 0 !important;
+}
+/* Video cards stack thumbnail over text so neither is squeezed. */
+html.ytvm-portrait ytd-search ytd-video-renderer #dismissible {
+  flex-direction: column !important;
+  align-items: stretch !important;
+}
+html.ytvm-portrait ytd-search ytd-video-renderer ytd-thumbnail {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 0 var(--ytvm-gutter) !important;
+  flex: none !important;
+}
+html.ytvm-portrait ytd-search ytd-video-renderer .text-wrapper {
+  min-width: 0;
+  max-width: none !important;
+}
+@media (max-width: 600px) {
+  html.ytvm-portrait ytd-search ytd-item-section-renderer > #contents {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- playlist pages, history and other two-column browse pages --------- */
+
+html.ytvm-portrait ytd-two-column-browse-results-renderer {
+  flex-direction: column !important;
+  margin: 0 !important;
+  padding: 0 var(--ytvm-gutter) !important;
+}
+html.ytvm-portrait ytd-two-column-browse-results-renderer > #primary,
+html.ytvm-portrait ytd-two-column-browse-results-renderer > #secondary {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+/* The playlist info sidebar sits above the videos instead of beside them. */
+html.ytvm-portrait ytd-browse ytd-playlist-sidebar-renderer {
+  position: static !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: auto !important;
+  margin: 0 !important;
+}
+html.ytvm-portrait ytd-browse[page-subtype="playlist"] ytd-two-column-browse-results-renderer {
+  margin-left: 0 !important;
+}
+html.ytvm-portrait ytd-playlist-video-list-renderer,
+html.ytvm-portrait ytd-playlist-video-renderer {
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+/* ---- Shorts: natively vertical; only drop the guide's reserved width -- */
+/* (no further rules on purpose: Shorts must keep its own aspect ratio) */
