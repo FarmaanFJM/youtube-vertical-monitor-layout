@@ -30,7 +30,7 @@ const measure = (page, sel) => page.evaluate((s) => { const e = document.querySe
 
 test('regular video: real player is edge to edge, comments left / recommendations right', async () => {
   const page = await visit('/watch?v=jNQXAC9IVRw');
-  await page.waitForSelector('ytd-watch-flexy #player-container-outer');
+  await page.waitForSelector('ytd-watch-flexy #player-container-outer', { state: 'attached' }); // hidden (not absent) behind YouTube's logged-out bot wall
   await page.waitForSelector('#related ytd-watch-next-secondary-results-renderer', { timeout: 30_000 });
   const vw = await page.evaluate(() => document.documentElement.clientWidth);
   const p = await measure(page, '#player-container-outer');
@@ -50,7 +50,7 @@ test('regular video: real player is edge to edge, comments left / recommendation
 
 test('regular video: landscape window keeps YouTube native layout', async () => {
   const page = await visit('/watch?v=jNQXAC9IVRw', { width: 1920, height: 1080 });
-  await page.waitForSelector('ytd-watch-flexy #player-container-outer');
+  await page.waitForSelector('ytd-watch-flexy #player-container-outer', { state: 'attached' }); // hidden (not absent) behind YouTube's logged-out bot wall
   expect(await page.evaluate(() => document.documentElement.classList.contains('ytvm-portrait'))).toBe(false);
   const p = await measure(page, '#player-container-outer');
   expect(p.x).toBeGreaterThan(0);
@@ -76,7 +76,7 @@ test('search: results fit the portrait viewport without horizontal overflow', as
 
 test('livestream (24/7 lofi stream): chat directly under the full-width player', async () => {
   const page = await visit('/watch?v=jfKfPfyJRdk');
-  await page.waitForSelector('ytd-watch-flexy #player-container-outer');
+  await page.waitForSelector('ytd-watch-flexy #player-container-outer', { state: 'attached' }); // hidden (not absent) behind YouTube's logged-out bot wall
   const hasChat = await page.waitForSelector('ytd-live-chat-frame#chat', { timeout: 30_000 }).then(() => true).catch(() => false);
   test.skip(!hasChat, 'stream is not live or chat did not mount for a logged-out automated browser');
   const vw = await page.evaluate(() => document.documentElement.clientWidth);

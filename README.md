@@ -150,7 +150,35 @@ If an expected element is absent, the corresponding rules simply match nothing a
 
 ## Verification status
 
-See the final section of the delivery notes in the repository's release/PR description for the exact counts of the most recent run; CI runs everything except the live tests on every push.
+What was actually run (Chromium 147-series via Playwright 1.63, Linux, logged out, October 2026):
+
+| Area | How verified | Result |
+|---|---|---|
+| Portrait detection, URL classification, navigation wiring, idempotent start/cleanup | 30 unit tests | 30 pass |
+| Edge-to-edge player (`x = 0`, `width = viewport`, height = width × 9/16 ± 1px, no horizontal overflow) at 1080×1920, 1440×2560, 1200×1920, 720×1280 | fixture e2e | pass |
+| Landscape 1920×1080 and 1280×720 keep YouTube's native layout | fixture e2e | pass |
+| Comments left / recommendations right (~50% each), thumbnails inside the column | fixture e2e, all 4 portrait sizes | pass |
+| Livestream: chat directly under the player, ≥480px tall, majority of remaining height, metadata after chat, chat scrolls, 200 incoming messages cause no layout change | fixture e2e | pass |
+| Resize portrait → landscape → portrait: same `<video>` element, playback keeps advancing with no reload events, chat iframe created once | fixture e2e | pass |
+| SPA navigation: logo, hamburger (overlay, player unchanged), search, home → video, video → video, Back ×4 with no page reload, notifications and profile popups | fixture e2e | pass |
+| Native fullscreen (real Fullscreen API on the player): fullscreen element fills the screen, portrait rules disabled, layout restored on exit | fixture e2e | pass |
+| Theater mode edge to edge at 1080 and 720 wide | fixture e2e | pass |
+| Home / subscriptions / channel (2 columns, 1 below 600px), search (2 columns of stacked cards), playlist, history, Shorts (9:16 preserved) | fixture e2e | pass |
+| Negative control: without the extension the same fixture is *not* edge to edge | fixture e2e | pass |
+| **Total fixture e2e** | | **32 pass, 0 fail** |
+| Static validation and lint | `npm run validate`, ESLint | clean |
+| **Real youtube.com, regular video, logged out**: player at `x=0`, width = viewport, 16:9, recommendations in the right half, comments in the left half, no horizontal overflow; landscape window keeps native layout | live smoke | pass (2 tests) |
+| Real youtube.com search results: no horizontal overflow at 1080×1920 | live smoke | pass (weak check: overflow only) |
+
+**Not verified on real YouTube** (reported honestly rather than assumed):
+
+* **Livestreams and live chat** — YouTube did not serve a livestream watch page (or its chat) to this automated, logged-out session, so the live smoke test skipped. The livestream layout is verified only against the fixture, whose chat structure (`#chat-container > ytd-live-chat-frame#chat > iframe#chatframe`) is taken from knowledge of YouTube's DOM, not from a live capture.
+* **Home grid and playlist/history layouts** — YouTube served no home feed items to the automated session, so the two-column grid override of `--ytd-rich-grid-*` is verified against the fixture only. Playlist and history likewise.
+* **Search card restyling** — only the "no overflow" property was checked live; the stacked-card/two-column arrangement is fixture-verified.
+* **Real video playback and real native fullscreen** — YouTube showed its "sign in to confirm you're not a bot" wall in place of playback, which was not bypassed. Playback preservation and fullscreen were tested with a real `<video>` and the real Fullscreen API on the fixture.
+* **Authenticated pages** (logged-in header, comment posting, chat input, subscriptions content), **Firefox**, **non-16:9 / vertical videos**, **real browser zoom UI**, **F11** (emulated by viewport size).
+
+CI (`.github/workflows/ci.yml`) runs lint, validate, unit and fixture e2e tests on every push and pull request, builds the release archives, and publishes them on `v*` tags. Live smoke tests run only on manual dispatch.
 
 ## License
 
