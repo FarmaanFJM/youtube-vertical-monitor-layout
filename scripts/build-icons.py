@@ -51,6 +51,27 @@ def make_master(src):
             else:
                 op[x, y] = p + (255,)
     out = out.crop(out.getbbox())
+    # The source has faint light lines hugging the tile edge. Anything within a
+    # few pixels of the outline is tile, so pull stray light pixels back to the
+    # tile's dark colour (alpha is kept, so the antialiased edge stays smooth).
+    ow, oh = out.size
+    ob = out.load()
+    edge = 6
+    for y in range(oh):
+        for x in range(ow):
+            r, g, b, a = ob[x, y]
+            if a == 0 or (r + g + b) / 3 <= DARK + 20:
+                continue
+            near = (
+                min(x, y, ow - 1 - x, oh - 1 - y) < edge
+                or any(
+                    ob[i, j][3] == 0
+                    for j in range(max(0, y - edge), min(oh, y + edge + 1))
+                    for i in range(max(0, x - edge), min(ow, x + edge + 1))
+                )
+            )
+            if near:
+                ob[x, y] = (DARK, DARK, DARK + 2, a)
     side = max(out.size)
     sq = Image.new("RGBA", (side, side), (0, 0, 0, 0))
     sq.paste(out, ((side - out.width) // 2, (side - out.height) // 2))
