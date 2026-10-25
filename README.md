@@ -9,7 +9,7 @@
 <p align="center">A browser extension for portrait-monitor YouTube viewing.</p>
 
 <p align="center">
-[![CI](https://github.com/FarmaanFJM/youtube-vertical-monitor-layout/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/FarmaanFJM/youtube-vertical-monitor-layout/actions/workflows/ci.yml)
+  <a href="https://github.com/FarmaanFJM/youtube-vertical-monitor-layout/actions/workflows/ci.yml"><img src="https://github.com/FarmaanFJM/youtube-vertical-monitor-layout/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
 </p>
 
 YouTube's desktop layout is designed for wide screens: a video capped to a centered column next to a 400px sidebar. Turn your monitor on its side and the player shrinks to a narrow strip while most of the screen's width goes to margins and a recommendations column.
