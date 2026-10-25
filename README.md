@@ -1,8 +1,16 @@
-# YouTube Vertical Monitor Layout
+<p align="center">
+  <img src="assets/logo.png" width="112" height="112" alt="YouTube Vertical Monitor Layout logo: a portrait monitor with a red screen and a white play symbol">
+</p>
 
-**Make YouTube comfortable on a portrait monitor: full-width video, with everything else rearranged underneath it.**
+<h1 align="center">YouTube Vertical Monitor Layout</h1>
 
+<p align="center"><b>Make YouTube comfortable on a portrait monitor: full-width video, with everything else rearranged underneath it.</b></p>
+
+<p align="center">A browser extension for portrait-monitor YouTube viewing.</p>
+
+<p align="center">
 [![CI](https://github.com/FarmaanFJM/youtube-vertical-monitor-layout/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/FarmaanFJM/youtube-vertical-monitor-layout/actions/workflows/ci.yml)
+</p>
 
 YouTube's desktop layout is designed for wide screens: a video capped to a centered column next to a 400px sidebar. Turn your monitor on its side and the player shrinks to a narrow strip while most of the screen's width goes to margins and a recommendations column.
 
@@ -131,14 +139,18 @@ There are three kinds of tests, and they prove different things:
 
 The live suite never tries to get around YouTube's bot checks: when no normal page is served, the test is **skipped with a reason**, not counted as passed. Because it depends on the network and on YouTube's current markup, CI runs it only when triggered manually. CI (`.github/workflows/ci.yml`) runs lint, validation, unit and fixture tests on every push and pull request, and builds the release archives.
 
+The extension icons are resized from `assets/logo.png` by `python3 scripts/build-icons.py` (needs Pillow); `npm run validate` checks that every declared icon exists, is a PNG and has the declared size. The logo is used as-is and is separate from any GitHub social preview image.
+
 To regenerate the README images: `npm run screenshots:live`, `npm run screenshots:fixture`, `npm run screenshots:install` (see [`scripts/capture-screenshots.mjs`](scripts/capture-screenshots.mjs)).
 
 ```
 manifest.json
+icons/          icon-16.png · icon-32.png · icon-48.png · icon-128.png (extension icons)
+assets/         logo.png (approved logo master, transparent, 512 px)
 src/content/    portrait.js · pages.js · navigation.js · index.js
 src/styles/     base.css · watch.css · live.css · browse.css
 tests/          unit/ · e2e/ · live/ · fixtures/youtube.html
-scripts/        validate.mjs · package.mjs · capture-screenshots.mjs
+scripts/        validate.mjs · package.mjs · capture-screenshots.mjs · build-icons.py
 docs/screenshots/
 ```
 
